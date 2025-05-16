@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mover Blocos de Lista</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        label, input, button { display: block; margin: 10px 0; }
+        pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+    <h2>Mover Bloco de Dados</h2>
+    <label for="blockId">ID do Bloco:</label>
+    <input type="text" id="blockId" placeholder="Digite o ID do bloco">
+
+    <label for="newListName">Nova Lista:</label>
+    <input type="text" id="newListName" placeholder="Digite o nome da nova lista">
+
+    <button onclick="moveBlock()">Mover Bloco</button>
+
+    <h3>Dados no LocalStorage:</h3>
+    <pre id="dataDisplay"></pre>
+
+    <script>
+        function moveBlock() {
+            const blockId = document.getElementById("blockId").value.trim();
+            const newListName = document.getElementById("newListName").value.trim();
+
+            if (!blockId || !newListName) {
+                alert("Preencha todos os campos.");
+                return;
+            }
+
+            let data = JSON.parse(localStorage.getItem("userData")) || {};
+            let foundBlock = null;
+            let parentArray = null;
+            let blockIndex = -1;
+
+            // Função recursiva para encontrar e remover o bloco pelo ID
+            function findAndRemoveBlock(obj) {
+                if (Array.isArray(obj)) {
+                    for (let i = 0; i < obj.length; i++) {
+                        if (obj[i] && obj[i].id === blockId) {
+                            foundBlock = obj[i];
+                            parentArray = obj;
+                            blockIndex = i;
+                            return true;
+                        } else if (typeof obj[i] === "object" && obj[i] !== null) {
+                            if (findAndRemoveBlock(obj[i])) return true;
+                        }
+                    }
+                } else if (typeof obj === "object" && obj !== null) {
+                    for (const key in obj) {
+                        if (findAndRemoveBlock(obj[key])) return true;
+                    }
+                }
+                return false;
+            }
+
+            // Função recursiva para encontrar a lista de destino
+            function findList(obj) {
+                if (Array.isArray(obj)) {
+                    for (let item of obj) {
+                        if (typeof item === "object" && item !== null) {
+                            let found = findList(item);
+                            if (found) return found;
+                        }
+                    }
+                } else if (typeof obj === "object" && obj !== null) {
+                    if (obj[newListName] && Array.isArray(obj[newListName])) {
+                        return obj[newListName];
+                    }
+                    for (const key in obj) {
+                        let found = findList(obj[key]);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            if (!findAndRemoveBlock(data)) {
+                alert("Bloco não encontrado.");
+                return;
+            }
+
+            if (foundBlock && parentArray && blockIndex !== -1) {
+                parentArray.splice(blockIndex, 1);
+            }
+
+            let targetList = findList(data);
+
+            if (!targetList) {
+                alert("Lista de destino não encontrada dentro da estrutura.");
+                return;
+            }
+
+            targetList.push(foundBlock);
+            localStorage.setItem("userData", JSON.stringify(data));
+
+            alert("Bloco movido com sucesso!");
+            displayData();
+        }
+
+        function displayData() {
+            const data = JSON.parse(localStorage.getItem("userData")) || {};
+            document.getElementById("dataDisplay").textContent = JSON.stringify(data, null, 2);
+        }
+
+        window.onload = displayData;
+    </script>
+
+</body>
+</html>

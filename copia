@@ -1,0 +1,211 @@
+// Criar e estilizar o botão de atualização apenas se ele não existir
+function createRefreshButton() {
+  // Verificar se o botão já existe
+  if (document.getElementById('refreshButton')) {
+    return; // Se já existe, não criar outro
+  }
+
+  const refreshButton = document.createElement('button');
+  refreshButton.id = 'refreshButton';
+  refreshButton.innerHTML = `
+    <span class="refresh-icon">↻</span>
+    <span class="refresh-text">Atualizar</span>
+  `;
+
+  // Estilos permanecem os mesmos...
+  if (!document.getElementById('refreshButtonStyle')) {
+    const style = document.createElement('style');
+    style.id = 'refreshButtonStyle';
+    style.textContent = `
+      #refreshButton {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        padding: 12px 24px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        z-index: 1000;
+      }
+
+      #refreshButton:hover {
+        background-color: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+
+      #refreshButton:active {
+        transform: translateY(0);
+      }
+
+      .refresh-icon {
+        font-size: 18px;
+        transition: transform 0.5s ease;
+      }
+
+      .refresh-text {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      .rotating {
+        animation: rotate 1s linear infinite;
+      }
+
+      @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Função auxiliar para esperar elementos serem renderizados
+  function waitForElement(selector, maxAttempts = 10) {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        const elements = document.querySelectorAll(selector);
+        attempts++;
+        if (elements.length > 0) {
+          clearInterval(interval);
+          resolve(elements);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          resolve(null);
+        }
+      }, 200);
+    });
+  }
+
+  // Função auxiliar para navegar até uma pasta específica
+  async function navigateToPath(userData, path) {
+    let currentLevel = 0;
+
+    async function clickFolder(folderName) {
+      // Esperar pelos elementos da pasta serem renderizados
+      const folderElements = await waitForElement('.folder-title');
+      if (!folderElements) {
+        console.error(`Não foi possível encontrar a pasta: ${folderName}`);
+        return false;
+      }
+
+      // Procurar pela pasta correta neste nível
+      for (const element of folderElements) {
+        if (element.textContent.trim() === folderName) {
+          // Clicar na pasta
+          element.click();
+          // Esperar um pouco para a renderização
+          await new Promise(resolve => setTimeout(resolve, 300));
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Navegar através do caminho
+    for (const folderName of path) {
+      const success = await clickFolder(folderName);
+      if (!success) {
+        console.error(`Falha ao navegar para a pasta: ${folderName}`);
+        break;
+      }
+      currentLevel++;
+    }
+
+    return currentLevel === path.length;
+  }
+
+  // Função para atualizar os dados
+  async function refreshData() {
+    const icon = refreshButton.querySelector('.refresh-icon');
+    icon.classList.add('rotating');
+
+    // Desabilitar o botão durante a atualização
+    refreshButton.disabled = true;
+    refreshButton.style.opacity = '0.7';
+
+    try {
+      // Salvar o caminho atual
+      const currentPath = folderNameHistory.slice();
+
+      // Recarregar dados do localStorage
+      const userData = JSON.parse(localStorage.getItem('userData'));
+
+      // Remover botão Voltar existente se houver
+      const existingBackButton = document.getElementById('backButton');
+      if (existingBackButton) {
+        existingBackButton.remove();
+      }
+
+      // Limpar o viewer atual
+      const viewer = document.getElementById('jsonViewer');
+      viewer.innerHTML = '';
+
+      if (userData) {
+        // Resetar variáveis globais mas manter o caminho
+        const savedPath = currentPath;
+        currentFolderName = '';
+        folderNameHistory = [];
+        deletedImageIds.clear();
+
+        // Reinicializar o viewer
+        initializeViewer(userData);
+
+        // Se havia um caminho ativo, restaurar a navegação
+        if (savedPath.length > 0) {
+          const success = await navigateToPath(userData, savedPath);
+          if (!success) {
+            console.warn('Algumas pastas não puderam ser encontradas após a atualização');
+          }
+        }
+
+        // Feedback visual positivo
+        refreshButton.style.backgroundColor = '#28a745';
+        setTimeout(() => {
+          refreshButton.style.backgroundColor = '#007bff';
+        }, 1000);
+      } else {
+        viewer.innerHTML = '<p>Nenhum dado encontrado no localStorage com o nome "userData".</p>';
+
+        // Feedback visual negativo
+        refreshButton.style.backgroundColor = '#dc3545';
+        setTimeout(() => {
+          refreshButton.style.backgroundColor = '#007bff';
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error);
+
+      // Feedback visual de erro
+      refreshButton.style.backgroundColor = '#dc3545';
+      setTimeout(() => {
+        refreshButton.style.backgroundColor = '#007bff';
+      }, 1000);
+    } finally {
+      // Remover a animação e reabilitar o botão após a conclusão
+      setTimeout(() => {
+        const icon = refreshButton.querySelector('.refresh-icon');
+        icon.classList.remove('rotating');
+        refreshButton.disabled = false;
+        refreshButton.style.opacity = '1';
+      }, 1000);
+    }
+  }
+
+  // Adicionar evento de clique
+  refreshButton.addEventListener('click', refreshData);
+
+  // Adicionar o botão ao documento
+  document.body.appendChild(refreshButton);
+}
+
+// Chamar a função para criar o botão
+createRefreshButton();

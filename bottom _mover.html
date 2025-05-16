@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botão Fixo</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+      
+      
+      .botao-flutuante {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    background-color: black;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.botao-flutuante img {
+    width: 60%;
+    height: 60%;
+    filter: brightness(0) invert(1); /* Garante que o ícone branco fique visível */
+}
+
+      
+      
+      
+    </style>
+    
+</head>
+<body>
+
+    <button class="botao-flutuante">
+        <img src="mover1.png" alt="Mover">
+    </button>
+
+</body>
+</html>

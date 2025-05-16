@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css_adicionar.css">
+  <link rel="stylesheet" href="backup1.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
+  <title>MfC</title>
+  <style>
+    :root {
+      --primary-color: #2b6cb0;
+      --background-color: #f0f0f0;
+      --text-color: #333;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+      color: var(--text-color);
+      
+      background-color: black; /* Define o fundo como preto */
+            color: black; /* Define a cor do texto como branco para melhor contraste */
+    }
+
+    #backButton {
+      display: none;
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #backButton:hover {
+      background-color: #1a4e8c;
+    }
+
+    #jsonViewer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      padding: 10px;
+    }
+
+    .folder {
+      flex: 0 0 200px;
+      height: 200px;
+      position: relative;
+      perspective: 10000px;
+      overflow: hidden; /* Garante que o conteúdo não ultrapasse o contêiner */
+    }
+    
+    
+    .folder.subfolder {
+    flex: 0 0 150px;  /* Menor que as pastas principais que são 200px */
+    height: 200px;    /* Menor que as pastas principais que são 200px */
+}
+
+.folder.subfolder .folder-title {
+    font-size: 0.9em;  /* Texto um pouco menor */
+    background-color: #e6e6e6;  /* Fundo um pouco mais escuro que as principais */
+    
+}
+    .folder-title {
+      font-family: 'Open Sans', sans-serif;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      background-color: var(--background-color);
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      transition: transform 0.3s;
+      
+      
+    }
+
+    /*.folder-title:hover {
+      transform: scale(1.05);
+    } */
+
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    
+    
+    
+    .botao-flutuante {
+    position: fixed;
+    bottom: 150px;
+    right: 29px;
+    width: 40px;
+    height: 40px;
+    background-color: black;
+    border: none;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.botao-flutuante img {
+    width: 70%;
+    height: 70%;
+    filter: brightness(0) invert(1); /* Garante que o ícone branco fique visível */
+}
+    
+    
+    
+
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    
+    @media (max-width: 390px) {
+  .folder {
+    flex: 0 0 100%;
+  }
+}
+
+
+
+.empty-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.empty-message.hidden {
+  display: none;
+}
+
+
+
+/* Estilo para o ícone personalizado */
+.extension-icon {
+  width: 20px; /* Ajuste conforme necessário */
+  height: 20px;
+  vertical-align: middle; /* Alinha com os ícones do Font Awesome */
+}
+
+
+
+
+
+  </style>
+</head>
+<body>
+  
+
+  <button class="botao-flutuante">
+  <img src="mover1.png" alt="Mover">
+</button>
+   <!-- Botão flutuante -->
+<!--<button class="trash-btn" id="trashBtn"><i class="fas fa-trash-alt"></i></button> -->
+
+<button class="floating-btn" onclick="toggleModal()">+</button>
+
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="toggleModal()">×</button>
+    <div class="container">
+      <div id="backup-container">
+        <button id="backup-btn">
+          <i class="fas fa-save"></i>
+        </button>
+        <button id="restore-btn">
+          <i class="fas fa-upload"></i>
+        </button>
+         <!-- Novo botão com seu ícone personalizado -->
+<button id="extension-btn">
+  <img src="icon_extensao.png" alt="Extensão" class="extension-icon">
+</button>
+        
+      </div>
+     <div class="input-group image-preview" id="imagePreview" onclick="handlePreviewClick()">
+  <span class="preview-content">
+    <span class="plus-icon">+</span>
+    <span class="preview-text">Copie o link direto de uma imagem e cole aqui</span>
+  </span>
+  <img id="previewImage" src="" alt="Pré-visualização da imagem">
+</div>
+<div class="input-group hidden" id="hiddenInput">
+  <label for="value"></label>
+  <input type="text" id="value" placeholder="Link de imagem" oninput="updateImagePreview()">
+</div>
+
+      <div class="input-group">
+        <label for="description">Nota/nome</label>
+        <textarea id="description" placeholder="Para nomes utilize barras /ExemploDeNome/"></textarea>
+      </div>
+
+      <div class="input-group">
+        <label for="pageUrl">Link da página</label>
+        <input type="text" id="pageUrl" placeholder="Cole o link">
+      </div>
+
+      <div class="input-group">
+        <label for="key">Criar pasta</label>
+        <input type="text" id="key" placeholder="Digite o nome da pasta">
+      </div>
+
+      <div class="input-group">
+  <label for="search">Selecionar pasta</label>
+  <div style="display: flex; gap: 5px;">
+    <input type="text" id="search" oninput="searchKey()" placeholder="Selecionar destino">
+    <button id="addCurrentFolder" style="padding: 0 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">+</button>
+  </div>
+</div>
+
+      <button class="button" onclick="addData()">Adicionar</button>
+
+       <div class="data-display">
+  <h3>Dados no LocalStorage:</h3>
+  <pre id="dataDisplay">Nenhum dado armazenado ainda.</pre> 
+</div> 
+    </div>
+  </div>
+</div>
+
+<!--<div class="search-folder">
+  <input type="text" id="folderSearchInput" placeholder="Nome da pasta">
+  <button onclick="navigateToFolderByName()">Ir</button>
+</div> -->
+
+  
+  <div id="jsonViewer" role="region" aria-label="Visualizador de Conteúdo"></div>
+  <div id="emptyMessage" class="empty-message">Vazio</div>
+
+  <script>
+  let currentFolderName = '';
+// Array para armazenar os nomes das pastas
+  let folderNameHistory = [];
+  
+  const deletedImageIds = new Set();
+  
+  
+  
+  
+  
+  
+  
+
+
+
+    function showImagesFromArray(array, container) {
+  const imageContainer = document.createElement('div');
+
+  imageContainer.style.display = 'flex';
+  imageContainer.style.flexWrap = 'wrap';
+  imageContainer.style.justifyContent = 'center';
+  imageContainer.style.gap = '10px';
+  imageContainer.style.marginTop = '20px';
+
+
+
+  array.forEach(item => {
+        // Verifica se o item tem ID e se não está no Set de imagens deletadas
+        if (item.link && (!item.id || !deletedImageIds.has(item.id))) {
+          const imgWrapper = document.createElement('div');
+      imgWrapper.style.position = 'relative';
+      imgWrapper.style.width = '150px';
+      imgWrapper.style.height = '200px';
+
+      const spinner = createLoadingSpinner();
+      imgWrapper.appendChild(spinner);
+
+      const img = document.createElement('img');
+      img.src = item.link;
+      img.alt = `Imagem do ID: ${item.id || ''}`;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.border = '1px solid #ccc';
+      img.style.borderRadius = '5px';
+      img.style.display = 'none';
+      img.style.objectFit = 'cover';
+      img.style.objectPosition = 'center';
+
+      img.addEventListener('load', () => {
+        spinner.remove();
+        img.style.display = 'block';
+      });
+
+      img.addEventListener('error', () => {
+        spinner.remove();
+        img.src = 'imagemvetorial.svg';
+        img.style.display = 'block';
+      });
+      
+      // Após criar a imagem (img), adicione:
+img.style.cursor = 'pointer'; // Para indicar que é clicável
+
+img.addEventListener('click', (event) => {
+  // Previne que o clique propague para outros elementos
+  event.stopPropagation(); 
+  
+  // Redireciona para a URL da imagem
+  if(item.url) {
+    window.open(item.url, '_blank'); // Abre em nova aba
+    // Ou use: window.location.href = item.url; // Para abrir na mesma aba
+  }
+});
+
+      // Menu de opções (três pontos)
+      
+      
+      const menuIcon = document.createElement('div');
+      menuIcon.style.position = 'absolute';
+      menuIcon.style.top = '10px';
+      menuIcon.style.right = '10px';
+      menuIcon.style.cursor = 'pointer';
+      menuIcon.style.display = 'flex';
+      menuIcon.style.flexDirection = 'column';
+      menuIcon.style.alignItems = 'center';
+      menuIcon.style.justifyContent = 'center';
+      menuIcon.style.gap = '4px';
+
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.style.width = '6px';
+        dot.style.height = '6px';
+        dot.style.border = '1px solid black'; // Borda preta bem leve
+        dot.style.borderRadius = '50%';
+        dot.style.backgroundColor = 'white';
+        menuIcon.appendChild(dot);
+      }
+      
+      
+      
+      
+
+      const menuOptions = document.createElement('div');
+      
+      menuOptions.style.position = 'absolute';
+      menuOptions.style.top = '35px';
+      menuOptions.style.right = '10px';
+      menuOptions.style.backgroundColor = '#fff';
+      menuOptions.style.border = '1px solid #ccc';
+      menuOptions.style.borderRadius = '5px';
+      menuOptions.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
+      menuOptions.style.display = 'none';
+      menuOptions.style.zIndex = '1000';
+      
+
+      const refreshOption = document.createElement('div');
+      refreshOption.textContent = 'Atualiza link';
+      refreshOption.style.padding = '10px';
+      refreshOption.style.cursor = 'pointer';
+      refreshOption.style.borderBottom = '1px solid #eee';
+      refreshOption.style.fontFamily = 'Arial, sans-serif';
+      //tira o atualizar link
+      refreshOption.style.display = 'none'; // Remove o botão sem deixar espaço
+
+      refreshOption.addEventListener('click', () => {
+        if (item.id) {
+          findItemById(item.id);
+          refreshData()
+        } else {
+          alert('ID não encontrado.');
+        }
+        
+      });
+      
+      
+      
+      
+      
+      
+      
+      let currentItemId = null; // Variável global para armazenar o ID da imagem atual
+
+const moveOption = document.createElement('div');
+moveOption.textContent = 'Mover';
+moveOption.style.padding = '10px';
+moveOption.style.cursor = 'pointer';
+moveOption.style.borderBottom = '1px solid #eee';
+moveOption.style.fontFamily = 'Arial, sans-serif';
+
+moveOption.addEventListener('click', () => {
+  const botaoFlutuante = document.querySelector('.botao-flutuante');
+  
+  if (botaoFlutuante) {
+    botaoFlutuante.style.display = 'block'; // Torna o botão visível
+    
+    // Atualiza o ID da imagem atual
+    currentItemId = item.id;
+    
+    // Configura o evento de clique no botão flutuante
+    botaoFlutuante.addEventListener('click', () => {
+      botaoFlutuante.style.display = 'none'; // Torna o botão invisível
+      
+      if (currentItemId) {
+        const newListName = currentFolderName;
+        const resultado = moveBlock(currentItemId, newListName);
+        refreshData();
+        cancelButton.style.display = 'none';
+        if (resultado.success) {
+          console.log(resultado.message);
+        } else {
+          console.error(resultado.message);
+        }
+      }
+    }, { once: true }); // Usamos { once: true } para garantir que o evento seja executado apenas uma vez
+  }
+  
+  const cancelButton = document.createElement('img');
+  cancelButton.src = 'cancelar.png';
+  cancelButton.style.position = 'fixed';
+  cancelButton.style.bottom = '100px';
+  cancelButton.style.right = '30px'; // Alterado para o canto inferior direito
+  cancelButton.style.width = '40px';
+  cancelButton.style.height = '40px';
+  cancelButton.style.cursor = 'pointer';
+  cancelButton.style.zIndex = '1000';
+  
+  cancelButton.addEventListener('click', () => {
+    const botaoFlutuante = document.querySelector('.botao-flutuante');
+    if (botaoFlutuante) {
+      botaoFlutuante.style.display = 'none';
+    }
+    cancelButton.style.display = 'none'; // Oculta o botão de cancelar
+    currentItemId = null; // Reseta o ID da imagem atual
+  });
+  
+  // Adiciona o botão ao corpo do documento
+  document.body.appendChild(cancelButton);
+});
+// Adicionar o elemento ao DOM
+
+
+
+
+
+      
+      
+      
+      
+      
+      const deleteOption = document.createElement('div');
+deleteOption.textContent = 'Apagar';
+deleteOption.style.padding = '10px';
+deleteOption.style.cursor = 'pointer';
+deleteOption.style.borderBottom = '1px solid #eee';
+deleteOption.style.fontFamily = 'Arial, sans-serif';
+
+deleteOption.addEventListener('click', () => {
+  if (item.id) {
+    // Remove o item do localStorage primeiro
+    deleteItemById(item.id);
+    // Adiciona o ID da imagem ao Set de imagens deletadas
+    deletedImageIds.add(item.id);
+    
+
+    // Encontra o container pai que contém todas as imagens
+    const imageContainer = imgWrapper.parentElement;
+
+    // Remove a imagem atual
+    imgWrapper.remove();
+
+    // Reorganiza o layout das imagens restantes
+    const remainingImages = imageContainer.children;
+    if (remainingImages.length > 0) {
+      // Se ainda houver imagens, ajusta o layout
+      Array.from(remainingImages).forEach((img, index) => {
+        img.style.order = index; // Usa flexbox order para manter a sequência
+      });
+
+      // Força um reflow do container
+      imageContainer.style.display = 'none';
+      imageContainer.offsetHeight; // Força um reflow
+      imageContainer.style.display = 'flex';
+    } else {
+      // Se não houver mais imagens, remove o container
+      imageContainer.remove();
+    }
+
+    menuOptions.style.display = 'none';
+  } else {
+    alert('ID não encontrado.');
+  }
+});
+
+
+      
+      
+      
+      
+      
+      
+const updateImageOption = document.createElement('div');
+updateImageOption.textContent = 'Nova Imagem';
+updateImageOption.style.padding = '10px';
+updateImageOption.style.cursor = 'pointer';
+updateImageOption.style.borderBottom = '1px solid #eee';
+updateImageOption.style.fontFamily = 'Arial, sans-serif';
+updateImageOption.style.display = 'none'; // Remove o botão sem deixar espaço
+
+updateImageOption.addEventListener('click', () => {
+  if (item.id) {
+    atualizarLinkPorId(item.id);
+    
+    
+    
+  } else {
+    alert('Esta imagem não tem um ID válido para atualização.');
+    
+  }
+  
+});
+
+menuOptions.appendChild(updateImageOption); 
+      
+      
+      
+      
+      
+      
+      
+      
+      // Adiciona a opção "Editar Nome" no menu de três pontos
+const editNameOption = document.createElement('div');
+editNameOption.textContent = 'Editar Nome';
+editNameOption.style.padding = '10px';
+editNameOption.style.cursor = 'pointer';
+editNameOption.style.borderBottom = '1px solid #eee';
+editNameOption.style.fontFamily = 'Arial, sans-serif';
+editNameOption.style.display = 'none'; // Remove o botão sem deixar espaço
+
+editNameOption.addEventListener('click', () => {
+  if (item.id) {
+    // Cria o modal de edição
+    const editModal = document.createElement('div');
+    editModal.style.position = 'fixed';
+    editModal.style.top = '50%';
+    editModal.style.left = '50%';
+    editModal.style.transform = 'translate(-50%, -50%)';
+    editModal.style.backgroundColor = 'white';
+    editModal.style.padding = '20px';
+    editModal.style.borderRadius = '8px';
+    editModal.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    editModal.style.zIndex = '1000';
+    editModal.style.width = '300px';
+    
+    // Cria o input
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = item.nome || '';
+    nameInput.style.width = '100%';
+    nameInput.style.padding = '8px';
+    nameInput.style.marginBottom = '10px';
+    nameInput.style.border = '1px solid #ccc';
+    nameInput.style.borderRadius = '4px';
+    
+    // Cria os botões
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.justifyContent = 'flex-end';
+    buttonContainer.style.gap = '10px';
+    
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancelar';
+    cancelButton.style.padding = '8px 16px';
+    cancelButton.style.backgroundColor = '#f0f0f0';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+    
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Salvar';
+    saveButton.style.padding = '8px 16px';
+    saveButton.style.backgroundColor = '#4CAF50';
+    saveButton.style.color = 'white';
+    saveButton.style.border = 'none';
+    saveButton.style.borderRadius = '4px';
+    saveButton.style.cursor = 'pointer';
+    
+    // Adiciona os elementos ao modal
+    editModal.appendChild(document.createTextNode('Novo nome:'));
+    editModal.appendChild(document.createElement('br'));
+    editModal.appendChild(nameInput);
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(saveButton);
+    editModal.appendChild(buttonContainer);
+    
+    // Adiciona o modal ao body
+    document.body.appendChild(editModal);
+    
+    // Cria overlay
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '999';
+    document.body.appendChild(overlay);
+    
+    // Foca no input automaticamente
+    //nameInput.focus();
+    
+    // Função para remover o modal
+    const removeModal = () => {
+      document.body.removeChild(editModal);
+      document.body.removeChild(overlay);
+    };
+    
+    // Event listeners
+    cancelButton.addEventListener('click', removeModal);
+    
+    saveButton.addEventListener('click', () => {
+      const newName = nameInput.value.trim();
+      if (newName && newName !== item.nome) {
+        const userData = JSON.parse(localStorage.getItem('userData')) || {};
+        if (updateItemName(userData, item.id, newName)) {
+          refreshData();
+        }
+      }
+      removeModal();
+    });
+    
+    overlay.addEventListener('click', removeModal);
+    
+    // Fecha com ESC
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        removeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    });
+    
+  } else {
+    alert('Esta imagem não tem um ID válido para edição.');
+  }
+});
+
+// Adiciona ao menu de opções
+menuOptions.appendChild(editNameOption);
+
+// Função auxiliar para atualizar o nome (já existente)
+function updateItemName(data, id, newName) {
+  function updateName(data) {
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        if (item.id === id) {
+          item.nome = newName;
+          return true;
+        }
+        if (typeof item === 'object') {
+          const updated = updateName(item);
+          if (updated) return updated;
+        }
+      }
+    } else if (typeof data === 'object') {
+      for (const key in data) {
+        const updated = updateName(data[key]);
+        if (updated) return updated;
+      }
+    }
+    return false;
+  }
+  
+  const updated = updateName(data);
+  if (updated) {
+    localStorage.setItem('userData', JSON.stringify(data));
+    return true;
+  }
+  return false;
+}
+      
+      
+      
+      
+      // Adiciona a opção "Editar" no menu de três pontos
+const editOption = document.createElement('div');
+editOption.textContent = 'Editar';
+editOption.style.padding = '10px';
+editOption.style.cursor = 'pointer';
+editOption.style.borderBottom = '1px solid #eee';
+editOption.style.fontFamily = 'Arial, sans-serif';
+
+editOption.addEventListener('click', () => {
+  if (item.id) {
+    // Cria o modal de edição completo
+    const editModal = document.createElement('div');
+    editModal.style.position = 'fixed';
+    editModal.style.top = '50%';
+    editModal.style.left = '50%';
+    editModal.style.transform = 'translate(-50%, -50%)';
+    editModal.style.backgroundColor = 'white';
+    editModal.style.padding = '20px';
+    editModal.style.borderRadius = '8px';
+    editModal.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    editModal.style.zIndex = '1000';
+    editModal.style.width = '300px';
+    
+    // Cria container para os botões superiores
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.display = 'flex';
+    buttonsContainer.style.gap = '10px';
+    buttonsContainer.style.marginBottom = '15px';
+    
+    // Botão Nova Imagem
+    const newImageBtn = document.createElement('button');
+    newImageBtn.textContent = 'Atualizar capa';
+    newImageBtn.style.flex = '1';
+    newImageBtn.style.padding = '8px';
+    newImageBtn.style.backgroundColor = '#4CAF50';
+    newImageBtn.style.color = 'white';
+    newImageBtn.style.border = 'none';
+    newImageBtn.style.borderRadius = '4px';
+    newImageBtn.style.cursor = 'pointer';
+    
+    newImageBtn.addEventListener('click', () => {
+      atualizarLinkPorId(item.id);
+      setTimeout(() => {
+        refreshData();
+      }, 100);
+    });
+    
+    // Botão Atualizar Link
+    const updateLinkBtn = document.createElement('button');
+    updateLinkBtn.textContent = 'Atualizar Link';
+    updateLinkBtn.style.flex = '1';
+    updateLinkBtn.style.padding = '8px';
+    updateLinkBtn.style.backgroundColor = '#2196F3';
+    updateLinkBtn.style.color = 'white';
+    updateLinkBtn.style.border = 'none';
+    updateLinkBtn.style.borderRadius = '4px';
+    updateLinkBtn.style.cursor = 'pointer';
+    
+    updateLinkBtn.addEventListener('click', () => {
+      findItemById(item.id);
+    });
+    
+    // Adiciona os botões ao container
+    buttonsContainer.appendChild(newImageBtn);
+    buttonsContainer.appendChild(updateLinkBtn);
+    
+    // Cria o input para edição do nome
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = item.nome || '';
+    nameInput.style.width = '100%';
+    nameInput.style.padding = '8px';
+    nameInput.style.marginBottom = '10px';
+    nameInput.style.border = '1px solid #ccc';
+    nameInput.style.borderRadius = '4px';
+    
+    // Cria os botões inferiores
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.justifyContent = 'flex-end';
+    buttonContainer.style.gap = '10px';
+    
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancelar';
+    cancelButton.style.padding = '8px 16px';
+    cancelButton.style.backgroundColor = '#f0f0f0';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+    
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Salvar Nome';
+    saveButton.style.padding = '8px 16px';
+    saveButton.style.backgroundColor = '#FF9800';
+    saveButton.style.color = 'white';
+    saveButton.style.border = 'none';
+    saveButton.style.borderRadius = '4px';
+    saveButton.style.cursor = 'pointer';
+    
+    // Adiciona os elementos ao modal
+    editModal.appendChild(buttonsContainer);
+    editModal.appendChild(document.createTextNode('Editar nome:'));
+    editModal.appendChild(nameInput);
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(saveButton);
+    editModal.appendChild(buttonContainer);
+    
+    // Adiciona o modal ao body
+    document.body.appendChild(editModal);
+    
+    // Cria overlay
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '999';
+    document.body.appendChild(overlay);
+    
+    // Foca no input automaticamente
+    //nameInput.focus();
+    
+    // Função para remover o modal
+    const removeModal = () => {
+      document.body.removeChild(editModal);
+      document.body.removeChild(overlay);
+    };
+    
+    // Event listeners
+    cancelButton.addEventListener('click', removeModal);
+    
+    saveButton.addEventListener('click', () => {
+      const newName = nameInput.value.trim();
+      if (newName && newName !== item.nome) {
+        const userData = JSON.parse(localStorage.getItem('userData')) || {};
+        if (updateItemName(userData, item.id, newName)) {
+          refreshData();
+        }
+      }
+      removeModal();
+    });
+    
+    overlay.addEventListener('click', removeModal);
+    
+    // Fecha com ESC
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        removeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    });
+    
+  } else {
+    alert('Esta imagem não tem um ID válido para edição.');
+  }
+});
+
+// Adiciona ao menu de opções (substitui as opções individuais)
+menuOptions.appendChild(editOption);
+
+// Remove as opções antigas se existirem
+const oldOptions = ['updateImageOption', 'editNameOption', 'refreshOption'];
+oldOptions.forEach(opt => {
+  if (window[opt]) {
+    try {
+      menuOptions.removeChild(window[opt]);
+    } catch (e) {
+      console.log('Opção antiga não encontrada:', opt);
+    }
+  }
+});
+
+// Função auxiliar para atualizar o nome (mantida)
+function updateItemName(data, id, newName) {
+  function updateName(data) {
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        if (item.id === id) {
+          item.nome = newName;
+          return true;
+        }
+        if (typeof item === 'object') {
+          const updated = updateName(item);
+          if (updated) return updated;
+        }
+      }
+    } else if (typeof data === 'object') {
+      for (const key in data) {
+        const updated = updateName(data[key]);
+        if (updated) return updated;
+      }
+    }
+    return false;
+  }
+  
+  const updated = updateName(data);
+  if (updated) {
+    localStorage.setItem('userData', JSON.stringify(data));
+    return true;
+  }
+  return false;
+}
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const notesOption = document.createElement('div');
+      notesOption.textContent = 'Notas';
+      notesOption.style.padding = '10px';
+      notesOption.style.cursor = 'pointer';
+      notesOption.style.fontFamily = 'Arial, sans-serif';
+      
+      notesOption.addEventListener('click', () => {
+  // Criar um modal ou dialog para visualização
+  const dialog = document.createElement('div');
+  dialog.style.position = 'fixed';
+  dialog.style.top = '50%';
+  dialog.style.left = '50%';
+  dialog.style.transform = 'translate(-50%, -50%)';
+  dialog.style.backgroundColor = 'white';
+  dialog.style.padding = '20px';
+  dialog.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+  dialog.style.borderRadius = '5px';
+  dialog.style.zIndex = '1001';
+  dialog.style.minWidth = '300px';
+  dialog.style.minHeight = '150px';
+  
+
+  // Criar div para exibir o texto (inicialmente somente leitura)
+  const textDisplay = document.createElement('div');
+  textDisplay.textContent = item.descricao || 'Sem descrição disponível.';
+  textDisplay.style.width = '300px';
+  textDisplay.style.height = '150px';
+  textDisplay.style.marginBottom = '10px';
+  textDisplay.style.padding = '8px';
+  textDisplay.style.border = '1px solid #ccc';
+  textDisplay.style.borderRadius = '4px';
+  textDisplay.style.overflowY = 'auto';
+  textDisplay.style.cursor = 'default';
+
+  // Adicionar dica visual
+  const hint = document.createElement('div');
+  hint.textContent = 'Duplo clique para editar';
+  hint.style.fontSize = '12px';
+  hint.style.color = '#666';
+  hint.style.marginBottom = '10px';
+  hint.style.textAlign = 'right';
+
+  // Container para os botões
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.textAlign = 'right';
+
+  // Botão Fechar
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'Fechar';
+  closeButton.style.padding = '8px 20px';
+  closeButton.style.backgroundColor = '#6c757d';
+  closeButton.style.color = 'white';
+  closeButton.style.border = 'none';
+  closeButton.style.borderRadius = '4px';
+  closeButton.style.cursor = 'pointer';
+
+  buttonContainer.appendChild(closeButton);
+  
+ 
+  // Event listener para duplo clique no texto
+  textDisplay.addEventListener('dblclick', () => {
+    // Substituir div por textarea
+    const textarea = document.createElement('textarea');
+    textarea.value = textDisplay.textContent;
+    textarea.style.width = '300px';
+    textarea.style.height = '150px';
+    textarea.style.marginBottom = '10px';
+    textarea.style.padding = '8px';
+    textarea.style.border = '1px solid #007bff';
+    textarea.style.borderRadius = '4px';
+    textarea.style.resize = 'none';
+
+    // Substituir botão Fechar por OK e Cancelar
+    buttonContainer.innerHTML = '';
+
+    const okButton = document.createElement('button');
+    okButton.textContent = 'OK';
+    okButton.style.padding = '8px 20px';
+    okButton.style.backgroundColor = '#007bff';
+    okButton.style.color = 'white';
+    okButton.style.border = 'none';
+    okButton.style.borderRadius = '4px';
+    okButton.style.cursor = 'pointer';
+    okButton.style.marginRight = '10px';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancelar';
+    cancelButton.style.padding = '8px 20px';
+    cancelButton.style.backgroundColor = '#6c757d';
+    cancelButton.style.color = 'white';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+
+    okButton.addEventListener('click', () => {
+  if (item.id) {
+    // Atualizar o objeto item antes de chamar a função de atualização
+    item.descricao = textarea.value;
+    searchItemByIdAndUpdate(item.id, textarea.value);
+  }
+  overlay.remove();
+  dialog.remove();
+  menuOptions.style.display = 'none';
+});
+
+    cancelButton.addEventListener('click', () => {
+      overlay.remove();
+      dialog.remove();
+      menuOptions.style.display = 'none';
+    });
+
+    buttonContainer.appendChild(okButton);
+    buttonContainer.appendChild(cancelButton);
+
+    // Substituir elementos
+    dialog.replaceChild(textarea, textDisplay);
+    hint.style.display = 'none';
+    textarea.focus();
+  });
+
+  // Adicionar overlay
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  overlay.style.zIndex = '1000';
+
+  // Event listener para o botão Fechar
+  closeButton.addEventListener('click', () => {
+    overlay.remove();
+    dialog.remove();
+    menuOptions.style.display = 'none';
+  });
+
+  // Adicionar elementos ao dialog
+  dialog.appendChild(hint);
+  dialog.appendChild(textDisplay);
+  dialog.appendChild(buttonContainer);
+
+  // Adicionar ao body
+  document.body.appendChild(overlay);
+  document.body.appendChild(dialog);
+});
+      
+      menuOptions.appendChild(refreshOption);
+      menuOptions.appendChild(notesOption);
+      menuOptions.appendChild(moveOption);
+      menuOptions.appendChild(deleteOption);
+
+      menuIcon.addEventListener('click', () => {
+        menuOptions.style.display =
+          menuOptions.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.addEventListener('click', event => {
+        if (!menuIcon.contains(event.target)) {
+          menuOptions.style.display = 'none';
+        }
+      });
+
+      imgWrapper.appendChild(img);
+      imgWrapper.appendChild(menuIcon);
+      imgWrapper.appendChild(menuOptions);
+      
+
+      const caption = document.createElement('div');
+      caption.textContent = item.nome || 'Sem nome';
+      caption.style.position = 'absolute';
+      caption.style.bottom = '0';
+      caption.style.width = '100%';
+      caption.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      caption.style.color = 'white';
+      caption.style.textAlign = 'center';
+      caption.style.padding = '5px 0';
+      caption.style.borderBottomLeftRadius = '5px';
+      caption.style.borderBottomRightRadius = '5px';
+      caption.style.whiteSpace = 'nowrap';
+      caption.style.overflow = 'hidden';
+      caption.style.textOverflow = 'ellipsis';
+      caption.style.cursor = 'pointer'; // Adiciona um cursor de ponteiro para indicar que é clicável
+      
+      
+      
+      // Adiciona o evento de clique para copiar o nome da imagem
+caption.addEventListener('click', (event) => {
+  event.stopPropagation(); // Impede que o clique propague para outros elementos
+  const textToCopy = item.nome || 'Sem nome';
+  
+  // Usa a API de Clipboard para copiar o texto
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    console.log('Nome da imagem copiado:', textToCopy);
+    
+    // Salva o texto original da legenda
+    const originalText = caption.textContent;
+    
+    // Altera o texto da legenda para "Copiado!" e muda a cor para verde
+    caption.textContent = 'Copiado!';
+    caption.style.color = 'lime'; // Cor verde
+    
+    // Restaura o texto original após 1 segundo
+    setTimeout(() => {
+      caption.textContent = originalText;
+      caption.style.color = 'white'; // Volta à cor original
+    }, 1000); // 1 segundo
+    
+  }).catch((err) => {
+    console.error('Erro ao copiar o nome da imagem:', err);
+    // Opcional: Mostrar uma mensagem de erro ao usuário
+    alert('Erro ao copiar o nome da imagem.');
+  });
+});
+
+      imgWrapper.appendChild(caption);
+
+      imageContainer.appendChild(imgWrapper);
+    }
+   
+  });
+  
+
+  if (imageContainer.childElementCount > 0) {
+    container.appendChild(imageContainer);
+    
+  }
+}
+
+// Exemplo de função para criar o spinner de carregamento
+function createLoadingSpinner() {
+  const spinner = document.createElement('div');
+  spinner.style.width = '30px';
+  spinner.style.height = '30px';
+  spinner.style.border = '4px solid #ccc';
+  spinner.style.borderTop = '4px solid #007bff';
+  spinner.style.borderRadius = '50%';
+  spinner.style.animation = 'spin 1s linear infinite';
+  spinner.style.margin = 'auto';
+
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  return spinner;
+}
+
+// Exemplo de função findItemById
+function findItemById(id) {
+  console.log(`Função findItemById chamada com ID: ${id}`);
+  // Aqui você pode implementar a lógica necessária para encontrar e manipular o item pelo ID.
+}
+
+// Exemplo de função para criar o spinner de carregamento
+function createLoadingSpinner() {
+  const spinner = document.createElement('div');
+  spinner.style.width = '30px';
+  spinner.style.height = '30px';
+  spinner.style.border = '4px solid #ccc';
+  spinner.style.borderTop = '4px solid #007bff';
+  spinner.style.borderRadius = '50%';
+  spinner.style.animation = 'spin 1s linear infinite';
+  spinner.style.margin = 'auto';
+
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  return spinner;
+}
+
+// Exemplo de função findItemById
+function findItemById(id) {
+  console.log(`Função findItemById chamada com ID: ${id}`);
+  // Aqui você pode implementar a lógica necessária para encontrar e manipular o item pelo ID.
+}
+    function displayFolderContent(content, container) {
+  if (Array.isArray(content)) {
+    // Cria um único array combinando subpastas e imagens
+    const combinedContent = content.slice().sort((a, b) => {
+      if (!a.link && b.link) return -1; // Pasta antes de imagem
+      if (a.link && !b.link) return 1; // Imagem depois de pasta
+      return 0; // Mantém a ordem original entre itens do mesmo tipo
+    });
+
+    combinedContent.forEach(item => {
+      if (item.link) {
+        // Renderiza imagens
+        showImagesFromArray([item], container);
+      } else {
+        // Renderiza pastas
+        createFolderElement([item], container, () => {});
+      }
+    });
+  } else if (typeof content === 'object') {
+    // Renderiza um único objeto como pasta
+    createFolderElement(content, container, () => {});
+  }
+}
+
+    function initializeViewer(userData) {
+  const viewer = document.getElementById('jsonViewer');
+  const emptyMessage = document.getElementById('emptyMessage');
+  
+  // Verifica se há dados
+  const hasData = userData && Object.keys(userData).length > 0;
+  
+  // Mostra ou esconde a mensagem "Vazio"
+  emptyMessage.classList.toggle('hidden', hasData);
+  
+  // Array para armazenar o caminho percorrido
+  const navigationPath = [{ content: userData, key: null }];
+  
+  const backButton = document.createElement('button');
+  backButton.id = 'backButton';
+  backButton.textContent = 'Voltar';
+  backButton.setAttribute('aria-label', 'Voltar à pasta anterior');
+  backButton.style.display = 'none'; // Oculta inicialmente
+  
+  backButton.addEventListener('click', () => {
+    if (navigationPath.length > 1) {
+      navigationPath.pop(); // Remove o nível atual
+      folderNameHistory.pop(); // Remove o último nome
+      currentFolderName = folderNameHistory[folderNameHistory.length - 1]; // Recupera o nome anterior
+      
+      const previousFolder = navigationPath[navigationPath.length - 1];
+      viewer.innerHTML = '';
+      displayFolderContent(previousFolder.content, viewer, navigateToFolder);
+      
+      // Mostra "Vazio" se não houver conteúdo na pasta anterior
+      const hasContent = previousFolder.content && Object.keys(previousFolder.content).length > 0;
+      emptyMessage.classList.toggle('hidden', hasContent);
+      
+      if (navigationPath.length === 1) {
+        backButton.style.display = 'none'; // Oculta o botão no nível raiz
+      }
+    }
+  });
+  
+  document.body.insertBefore(backButton, viewer);
+  
+  function navigateToFolder(folderContent, folderKey) {
+    navigationPath.push({ content: folderContent, key: folderKey }); // Adiciona ao caminho
+    viewer.innerHTML = '';
+    displayFolderContent(folderContent, viewer, navigateToFolder);
+    backButton.style.display = 'block'; // Exibe o botão "Voltar"
+    
+    // Esconde "Vazio" ao navegar para uma pasta
+    emptyMessage.classList.add('hidden');
+  }
+  
+  displayFolderContent(userData, viewer, navigateToFolder);
+}
+
+function createFolderElement(obj, parentElement, navigateCallback, level = 0) {
+  if (Array.isArray(obj)) {
+    obj.forEach((item, index) => {
+      createFolderElement(item, parentElement, (content) => navigateCallback(content, index), level + 1);
+    });
+  } else if (typeof obj === 'object' && obj !== null) {
+    Object.keys(obj).forEach(key => {
+      if (["link", "descricao", "url", "tag", "id", "nome", "position", "scale"].includes(key)) return;
+      // Esconde a mensagem "Vazio" quando uma pasta é criada
+        emptyMessage.classList.add('hidden');
+
+      const folder = document.createElement('div');
+      folder.className = level > 0 ? 'folder subfolder' : 'folder';
+      folder.setAttribute('role', 'button');
+      folder.setAttribute('aria-label', `Pasta ${key}`
+      );
+      
+
+
+// aqui fica o titulo ________€__________________
+
+
+
+      const title = document.createElement('div');
+      title.className = 'folder-title';
+
+      function truncateFolderName(name, maxLength = 17) {
+      return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
+}
+      title.textContent = truncateFolderName(key);
+      
+      
+      //_________€€€€___€_______________________
+      
+      // Menu de opções (três pontos)
+const menuIcon = document.createElement('div');
+menuIcon.style.position = 'absolute';
+menuIcon.style.top = '5px';
+menuIcon.style.right = '5px';
+menuIcon.style.cursor = 'pointer';
+menuIcon.style.display = 'flex';
+menuIcon.style.flexDirection = 'column';
+menuIcon.style.alignItems = 'center';
+menuIcon.style.justifyContent = 'center';
+menuIcon.style.gap = '4px';
+
+for (let i = 0; i < 3; i++) {
+  const dot = document.createElement('div');
+  dot.style.width = '6px';
+  dot.style.height = '6px';
+  dot.style.borderRadius = '50%';
+  dot.style.backgroundColor = '#6699FF'; // Azul claro
+  menuIcon.appendChild(dot);
+}
+
+// Menu de opções
+const menuOptions = document.createElement('div');
+menuOptions.style.position = 'absolute';
+menuOptions.style.top = '25px';
+menuOptions.style.right = '5px';
+menuOptions.style.backgroundColor = '#fff';
+menuOptions.style.border = '1px solid #ccc';
+menuOptions.style.borderRadius = '5px';
+menuOptions.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
+menuOptions.style.display = 'none';
+menuOptions.style.zIndex = '1000';
+
+// Opção "Apagar"
+// Opção "Apagar"
+const deleteOption = document.createElement('div');
+deleteOption.textContent = 'Apagar';
+deleteOption.style.padding = '10px';
+deleteOption.style.cursor = 'pointer';
+deleteOption.style.fontFamily = 'Arial, sans-serif';
+
+deleteOption.addEventListener('click', () => {
+  if (key && obj[key]) {
+    // Função auxiliar para buscar e deletar a chave no JSON
+    function searchAndDeleteKey(keyToDelete, data) {
+      for (let k in data) {
+        if (k === keyToDelete) {
+          delete data[k];
+          return true;
+        }
+        if (typeof data[k] === 'object' && data[k] !== null) {
+          if (searchAndDeleteKey(keyToDelete, data[k])) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    
+    // Remove a pasta do objeto local
+    delete obj[key];
+    
+    // Remove a pasta da interface
+    folder.remove();
+    
+    // Atualiza o localStorage com a remoção da pasta
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (searchAndDeleteKey(key, userData)) {
+      localStorage.setItem('userData', JSON.stringify(userData));
+    } else {
+      console.warn('Pasta não encontrada no localStorage, mas removida da interface');
+    }
+    
+    // Opcional: chamar refreshData() para garantir sincronização completa
+    setTimeout(refreshData, 0);
+  } else {
+    alert('Erro ao apagar a pasta.');
+  }
+  menuOptions.style.display = 'none'; // Esconde o menu
+});
+
+menuOptions.appendChild(deleteOption);
+
+
+//________________///___________________
+
+
+// Opção "Renomear"
+const renameOption = document.createElement('div');
+renameOption.textContent = 'Renomear';
+renameOption.style.padding = '10px';
+renameOption.style.cursor = 'pointer';
+renameOption.style.fontFamily = 'Arial, sans-serif';
+
+renameOption.addEventListener('click', () => {
+  // Cria um modal para inserir o novo nome
+  const renameModal = document.createElement('div');
+  renameModal.style.position = 'fixed';
+  renameModal.style.top = '50%';
+  renameModal.style.left = '50%';
+  renameModal.style.transform = 'translate(-50%, -50%)';
+  renameModal.style.backgroundColor = 'white';
+  renameModal.style.padding = '20px';
+  renameModal.style.borderRadius = '8px';
+  renameModal.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  renameModal.style.zIndex = '1001';
+  renameModal.style.width = '300px';
+  
+  // Input para o novo nome
+  const newNameInput = document.createElement('input');
+  newNameInput.type = 'text';
+  newNameInput.value = key; // Preenche com o nome atual
+  newNameInput.style.width = '100%';
+  newNameInput.style.padding = '8px';
+  newNameInput.style.marginBottom = '10px';
+  newNameInput.style.border = '1px solid #ccc';
+  newNameInput.style.borderRadius = '4px';
+  
+  // Botões
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.display = 'flex';
+  buttonContainer.style.justifyContent = 'flex-end';
+  buttonContainer.style.gap = '10px';
+  
+  const cancelButton = document.createElement('button');
+  cancelButton.textContent = 'Cancelar';
+  cancelButton.style.padding = '8px 16px';
+  cancelButton.style.backgroundColor = '#f0f0f0';
+  cancelButton.style.border = 'none';
+  cancelButton.style.borderRadius = '4px';
+  cancelButton.style.cursor = 'pointer';
+  
+  const confirmButton = document.createElement('button');
+  confirmButton.textContent = 'Confirmar';
+  confirmButton.style.padding = '8px 16px';
+  confirmButton.style.backgroundColor = '#4CAF50';
+  confirmButton.style.color = 'white';
+  confirmButton.style.border = 'none';
+  confirmButton.style.borderRadius = '4px';
+  confirmButton.style.cursor = 'pointer';
+  
+  // Adiciona elementos ao modal
+  renameModal.appendChild(document.createTextNode('Novo nome:'));
+  renameModal.appendChild(document.createElement('br'));
+  renameModal.appendChild(newNameInput);
+  buttonContainer.appendChild(cancelButton);
+  buttonContainer.appendChild(confirmButton);
+  renameModal.appendChild(buttonContainer);
+  
+  // Cria overlay
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  overlay.style.zIndex = '1000';
+  
+  // Adiciona ao body
+  document.body.appendChild(overlay);
+  document.body.appendChild(renameModal);
+  
+  // Foca no input
+  newNameInput.focus();
+  
+  // Função para renomear no localStorage
+  const renameFolder = (oldName, newName) => {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    let renamed = false;
+    
+    function renameInData(data) {
+      if (typeof data === 'object' && data !== null) {
+        for (const k in data) {
+          if (k === oldName) {
+            // Cria nova propriedade com o novo nome e copia o valor
+            data[newName] = data[k];
+            // Remove a propriedade antiga
+            delete data[k];
+            renamed = true;
+            return;
+          }
+          // Verifica recursivamente em objetos aninhados
+          renameInData(data[k]);
+        }
+      }
+    }
+    
+    renameInData(userData);
+    
+    if (renamed) {
+      localStorage.setItem('userData', JSON.stringify(userData));
+      return true;
+    }
+    return false;
+  };
+  
+  // Event listeners
+  cancelButton.addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    document.body.removeChild(renameModal);
+    menuOptions.style.display = 'none';
+  });
+  
+  confirmButton.addEventListener('click', () => {
+    const newName = newNameInput.value.trim();
+    if (newName && newName !== key) {
+      if (renameFolder(key, newName)) {
+        // Atualiza a interface
+        title.textContent = newName;
+        // Atualiza o nome da pasta atual se for a que está sendo visualizada
+        if (currentFolderName === key) {
+          currentFolderName = newName;
+        }
+        // Atualiza o histórico se necessário
+        const index = folderNameHistory.indexOf(key);
+        if (index !== -1) {
+          folderNameHistory[index] = newName;
+        }
+        refreshData();
+      } else {
+        alert('Erro ao renomear a pasta.');
+      }
+    }
+    document.body.removeChild(overlay);
+    document.body.removeChild(renameModal);
+    menuOptions.style.display = 'none';
+  });
+  
+  overlay.addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    document.body.removeChild(renameModal);
+    menuOptions.style.display = 'none';
+  });
+  
+  // Fecha com ESC
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') {
+      document.body.removeChild(overlay);
+      document.body.removeChild(renameModal);
+      document.removeEventListener('keydown', escHandler);
+      menuOptions.style.display = 'none';
+    }
+  });
+});
+
+menuOptions.appendChild(renameOption);
+
+
+
+
+//____________________==___________________
+
+menuIcon.addEventListener('click', (event) => {
+  event.stopPropagation();
+  menuOptions.style.display =
+    menuOptions.style.display === 'none' ? 'block' : 'none';
+});
+
+document.addEventListener('click', (event) => {
+  if (!menuIcon.contains(event.target)) {
+    menuOptions.style.display = 'none';
+  }
+});
+
+// Adiciona o menu à pasta
+folder.appendChild(menuIcon);
+folder.appendChild(menuOptions);
+      
+      
+
+      folder.appendChild(title);
+      parentElement.appendChild(folder);
+
+      if (Array.isArray(obj[key]) || typeof obj[key] === 'object') {
+        // Modifique o event listener dentro da função createFolderElement
+title.addEventListener('click', () => {
+  folderNameHistory.push(key); // Guarda o nome da pasta clicada
+  currentFolderName = key; // Armazena o nome da pasta atual
+  navigateCallback(obj[key], key);
+});
+
+
+
+      }
+    });
+  }
+}
+
+
+document.getElementById('addCurrentFolder').addEventListener('click', () => {
+  const searchInput = document.getElementById('search');
+  if (currentFolderName) {
+    searchInput.value = currentFolderName;
+    // Dispara o evento de input para ativar a função searchKey()
+    searchInput.dispatchEvent(new Event('input'));
+  }
+});
+
+function displayFolderContent(content, container, navigateCallback) {
+  container.innerHTML = ''; // Limpa o conteúdo atual
+
+  if (Array.isArray(content)) {
+    // Combina e ordena o conteúdo
+    const combinedContent = content.slice().sort((a, b) => {
+      if (!a.link && b.link) return -1; // Pasta antes de imagem
+      if (a.link && !b.link) return 1; // Imagem depois de pasta
+      return 0; // Mantém a ordem original entre itens do mesmo tipo
+    });
+
+    combinedContent.forEach(item => {
+      if (item.link) {
+        // Renderiza imagens
+        showImagesFromArray([item], container);
+      } else {
+        // Renderiza pastas
+        createFolderElement([item], container, navigateCallback);
+      }
+    });
+  } else if (typeof content === 'object') {
+    // Renderiza um único objeto como pasta
+    createFolderElement(content, container, navigateCallback);
+  }
+}
+
+const userData = JSON.parse(localStorage.getItem('userData'));
+if (userData) {
+  initializeViewer(userData);
+} else {
+  document.getElementById('jsonViewer').innerHTML =
+    '<p>Nenhum dado encontrado no localStorage com o nome "userData".</p>';
+}
+
+
+// Função independente do botão modal inferior 
+
+function toggleModal() {
+  const modal = document.getElementById('modal');
+  if (modal.style.display === 'block') {
+    modal.style.display = 'none';
+  } else {
+    modal.style.display = 'block';
+    
+  }
+}
+
+function toggleInput() {
+  
+  const hiddenInput = document.getElementById('hiddenInput');
+  hiddenInput.classList.toggle('hidden');
+  
+  
+}
+
+
+function updateImagePreview() {
+  const input = document.getElementById('value');
+  const preview = document.getElementById('previewImage');
+  const previewText = document.querySelector('.preview-content');
+
+  if (input.value) {
+    preview.src = input.value;
+    preview.style.display = 'block';
+    previewText.style.display = 'none';
+  } else {
+    preview.style.display = 'none';
+    previewText.style.display = 'flex';
+  }
+}
+
+// Fechar o modal ao clicar fora dele
+window.onclick = function(event) {
+  const modal = document.getElementById('modal');
+  if (event.target === modal) {
+    modal.style.display = 'none';
+    
+  }
+}
+//----------------------------------------------------
+
+
+
+
+
+
+// Selecionar o botão existente
+const addButton = document.querySelector('button.button');
+
+// Adicionar um ouvinte de evento para o clique no botão
+addButton.addEventListener('click', () => {
+  // Esperar a execução de addData() (chamado no onclick)
+  setTimeout(() => {
+    refreshData(); // Chamar refreshData após addData
+  }, 0);
+});
+
+// Função simulada de refreshData
+function refreshData() {
+  console.log("Função refreshData executada!");
+}
+
+
+// Função auxiliar para esperar elementos serem renderizados
+function waitForElement(selector, maxAttempts = 10) {
+  return new Promise((resolve) => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const elements = document.querySelectorAll(selector);
+      attempts++;
+      if (elements.length > 0) {
+        clearInterval(interval);
+        resolve(elements);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        resolve(null);
+      }
+    }, 0);
+  });
+}
+
+// Função auxiliar para navegar até uma pasta específica
+async function navigateToPath(userData, path) {
+  let currentLevel = 0;
+
+  async function clickFolder(folderName) {
+    // Esperar pelos elementos da pasta serem renderizados
+    const folderElements = await waitForElement('.folder-title');
+    if (!folderElements) {
+      console.error(`Não foi possível encontrar a pasta: ${folderName}`);
+      return false;
+    }
+
+    // Procurar pela pasta correta neste nível
+    for (const element of folderElements) {
+      if (element.textContent.trim() === folderName) {
+        // Clicar na pasta
+        element.click();
+        // Esperar um pouco para a renderização
+        await new Promise(resolve => setTimeout(resolve, 0));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Navegar através do caminho
+  for (const folderName of path) {
+    const success = await clickFolder(folderName);
+    if (!success) {
+      console.error(`Falha ao navegar para a pasta: ${folderName}`);
+      break;
+    }
+    currentLevel++;
+  }
+
+  return currentLevel === path.length;
+}
+
+// Função para atualizar os dados
+async function refreshData() {
+  // Salvar a posição do scroll atual
+  const scrollPosition = window.scrollY;
+  localStorage.setItem('scrollPosition', scrollPosition);
+
+  try {
+    // Salvar o caminho atual
+    const currentPath = folderNameHistory.slice();
+
+    // Recarregar dados do localStorage
+    const userData = JSON.parse(localStorage.getItem('userData'));
+
+    // Remover botão Voltar existente se houver
+    const existingBackButton = document.getElementById('backButton');
+    if (existingBackButton) {
+      existingBackButton.remove();
+    }
+
+    // Limpar o viewer atual
+    const viewer = document.getElementById('jsonViewer');
+    viewer.innerHTML = '';
+
+    if (userData) {
+      // Resetar variáveis globais mas manter o caminho
+      const savedPath = currentPath;
+      currentFolderName = '';
+      folderNameHistory = [];
+      deletedImageIds.clear();
+
+      // Reinicializar o viewer
+      initializeViewer(userData);
+
+      // Se havia um caminho ativo, restaurar a navegação
+      if (savedPath.length > 0) {
+        const success = await navigateToPath(userData, savedPath);
+        if (!success) {
+          console.warn('Algumas pastas não puderam ser encontradas após a atualização');
+        }
+      }
+
+      console.info('Atualização concluída com sucesso.');
+    } else {
+      viewer.innerHTML = '<p>Nenhum dado encontrado no localStorage com o nome "userData".</p>';
+      console.warn('Nenhum dado encontrado no localStorage.');
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar dados:', error);
+  } finally {
+    // Restaurar a posição do scroll
+    const savedScrollPosition = localStorage.getItem('scrollPosition');
+    if (savedScrollPosition !== null) {
+      window.scrollTo(0, parseInt(savedScrollPosition, 10));
+      localStorage.removeItem('scrollPosition'); // Limpar após restaurar
+    }
+  }
+}
+
+
+
+
+
+
+// Selecionando os elementos
+const pageUrlInput = document.getElementById('pageUrl');
+const descriptionInput = document.getElementById('description');
+
+// Função simulada de extração do título do link
+function extrairTituloDeLink(link) {
+  const titulo = `Título extraído de: ${link}`; // Simula extração
+  return titulo;
+}
+
+// Variável para armazenar o título atual
+let tituloAtual = '';
+
+// Adicionando evento ao campo de link
+pageUrlInput.addEventListener('input', function () {
+  const descricao = descriptionInput.value.trim();
+
+  // Verifica se já existe um nome entre barras na descrição
+  if (/\/.+\//.test(descricao)) {
+    console.log("Nome entre barras já existe. Função desativada.");
+    return; // Interrompe a execução da função
+  }
+
+  const link = pageUrlInput.value.trim();
+  const tituloExtraido = link ? extrairTituloDeLink(link) : null;
+
+  // Só adiciona as barras se o título não for null
+  const novoTitulo = tituloExtraido ? `/${tituloExtraido}/` : '';
+
+  let notas = descriptionInput.value;
+
+  // Se existe um título atual, remove ele primeiro
+  if (tituloAtual) {
+    notas = notas.replace(tituloAtual, '').trim();
+  }
+
+  // Atualiza o título atual
+  tituloAtual = novoTitulo;
+
+  // Adiciona o novo título apenas se não for null e não estiver vazio
+  if (novoTitulo && tituloExtraido) {
+    descriptionInput.value = notas ? `${notas} ${novoTitulo}` : novoTitulo;
+  } else {
+    descriptionInput.value = notas; // Mantém apenas as notas quando não há título
+  }
+});
+
+
+document.getElementById("extension-btn").addEventListener("click", () => {
+  window.location.href = "https://dowload-extensao.netlify.app/";
+});
+
+
+
+
+  </script>
+  <script src="id_clipboard.js"></script>
+  <script src="notas1.js"></script>
+  <script src="deleta1.js"></script>
+  <script src="js_adicionar.js"></script>
+  <script src="backup1.js"></script>
+  <script src="titulo.js"></script>
+  <script src="linkExtractor.js"></script>
+  <script src="teste1.js"></script>
+  <script src="moverbloco.js"></script>
+  <script src="atualizar link.js"></script>
+  <script src="message.js"></script>
+  
+</body>
+</html>
