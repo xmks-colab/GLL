@@ -133,8 +133,40 @@
     filter: brightness(0) invert(1); /* Garante que o ícone branco fique visível */
 }
     
+    .img-wrapper {
+  width: 150px;
+  height: 200px;
+}
+
+@media (max-width: 380px) {
+  .img-wrapper {
+    width: 100px;
+    height: 150px;
+  }
+}
+    
+
+
+
+
+    
+    @media (max-width: 450px) {
+  .folder {
+    flex: 0 0 47%;
+    max-width: 60%;
+    margin: 4px 0;
+    height: 180px;
     
     
+  }
+}
+
+    @media (max-width: 380px) {
+      .folder.subfolder {
+    flex: 0 0 100px;  /* Menor que as pastas principais que são 200px */
+    height: 150px;    /* Menor que as pastas principais que são 200px */
+}
+    }
 
 
     @keyframes spin {
@@ -142,12 +174,7 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    
-    @media (max-width: 300px) {
-  .folder {
-    flex: 0 0 100%;
-  }
-}
+
 
 
 
@@ -175,6 +202,12 @@
   height: 20px;
   vertical-align: middle; /* Alinha com os ícones do Font Awesome */
 }
+
+
+
+
+
+
 
 
 
@@ -297,9 +330,13 @@
         // Verifica se o item tem ID e se não está no Set de imagens deletadas
         if (item.link && (!item.id || !deletedImageIds.has(item.id))) {
           const imgWrapper = document.createElement('div');
-      imgWrapper.style.position = 'relative';
-      imgWrapper.style.width = '150px';
-      imgWrapper.style.height = '200px';
+imgWrapper.style.position = 'relative'; // se quiser manter isso inline
+imgWrapper.classList.add('img-wrapper');
+      
+      
+      
+      
+      
 
       const spinner = createLoadingSpinner();
       imgWrapper.appendChild(spinner);
